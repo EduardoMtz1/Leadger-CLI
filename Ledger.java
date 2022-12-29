@@ -1,10 +1,15 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class Ledger {
+
     public File indexFile;
     public File priceDBFile;
+    public List<String> accounts = new ArrayList<String>();
+    public String sufix;
 
     void errorHandling(String s) {
         System.out.println(s);
@@ -70,6 +75,23 @@ public class Ledger {
         if(!ledger.priceDBFile.exists()){
             ledger.errorHandling("File " + priceDB + " not found");
         }
+
+        try {
+            Scanner fileRead = new Scanner(ledger.indexFile);
+            while(fileRead.hasNextLine()){
+                String lineRead = fileRead.nextLine();
+                String[] sliced = lineRead.split("\\s");
+                if(sliced[0].trim().equals("!include")){
+                    String[] name = sliced[1].split("\\.");
+                    ledger.accounts.add(name[0].trim());
+                    if(ledger.sufix == null) ledger.sufix = name[1].trim();
+                }
+            }
+            fileRead.close();
+        } catch (FileNotFoundException e) {
+            ledger.errorHandling("File " + index + " not found\n" + e.getStackTrace());
+        }
+
         if(action.equals(""))ledger.errorHandling("No action defined");
         if(action.equals("bal"))ledger.balanceFunction();
         if(action.equals("reg"))ledger.registerFunction();

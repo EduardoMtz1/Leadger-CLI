@@ -8,10 +8,8 @@ public class Registry {
     public Registry(List<String> registry){
         rawRegistry = registry;
         for(int i = 0; i < rawRegistry.size(); i++){
+            System.out.println(rawRegistry.get(i));
             String[] line = rawRegistry.get(i).split("\\s");
-            for(int j = 0; j < line.length; j++){
-                
-            }
         }
     }
 }
