@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class Ledger {
 
@@ -17,6 +18,88 @@ public class Ledger {
         System.exit(-1);
     }
 
+    List<Registry> getRegistries(List<String> actionArgs) {
+        List<Registry> registriesToUse = new ArrayList<Registry>();
+        if (actionArgs.size() == 0) {
+            for (int i = 0; i < accounts.size(); i++) {
+                System.out.println(accounts.get(i));
+                String routeAc = routeName + "/" + accounts.get(i) + "." + sufix;
+                File account = new File(routeAc);
+                try {
+                    Scanner fileScanner = new Scanner(account);
+                    List<String> rawRegistry;
+                    while (fileScanner.hasNextLine()) {
+                        String line = fileScanner.nextLine();
+                        if (line.charAt(0) == ';')
+                            line = fileScanner.nextLine();
+                        while (fileScanner.hasNextLine()) {
+                            if (Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                rawRegistry = new ArrayList<String>();
+                                rawRegistry.add(line);
+                                boolean isDate = false;
+                                while (fileScanner.hasNextLine() && !isDate) {
+                                    line = fileScanner.nextLine();
+                                    if (!Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                        rawRegistry.add(line);
+                                    } else {
+                                        isDate = true;
+                                    }
+                                }
+                                Registry reg = new Registry(rawRegistry);
+                                registriesToUse.add(reg);
+                            }
+                        }
+                    }
+                    fileScanner.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
+                }
+            }
+        } else {
+            for (int i = 0; i < actionArgs.size(); i++) {
+                System.out.println(actionArgs.get(i));
+                if (accounts.contains(actionArgs.get(i))) {
+                    String routeAc = routeName + "" + accounts.get(i) + "." + sufix;
+                    File account = new File(routeAc);
+                    try {
+                        Scanner fileScanner = new Scanner(account);
+                        List<String> rawRegistry;
+                        while (fileScanner.hasNextLine()) {
+                            String line = fileScanner.nextLine();
+                            if (line.charAt(0) == ';')
+                                line = fileScanner.nextLine();
+                            while (fileScanner.hasNextLine()) {
+                                if (Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                    rawRegistry = new ArrayList<String>();
+                                    rawRegistry.add(line);
+                                    boolean isDate = false;
+                                    while (fileScanner.hasNextLine() && !isDate) {
+                                        line = fileScanner.nextLine();
+                                        if (!Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                            rawRegistry.add(line);
+                                        } else {
+                                            isDate = true;
+                                        }
+                                    }
+                                    Registry reg = new Registry(rawRegistry);
+                                    registriesToUse.add(reg);
+                                }
+                            }
+                        }
+                        fileScanner.close();
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                        errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
+                    }
+                } else {
+
+                }
+            }
+        }
+        return registriesToUse;
+    }
+
     void registerFunction() {
 
     }
@@ -26,40 +109,17 @@ public class Ledger {
     }
 
     void printFunction(boolean sort, String sortType, List<String> actionArgs) {
-        if (actionArgs.size() == 0) {
-            for (int i = 0; i < accounts.size(); i++) {
-                System.out.println(accounts.get(i));
-                String routeAc = routeName + "/" + accounts.get(i) + "." + sufix;
-                File account = new File(routeAc);
-                try {
-                    Scanner fileScanner = new Scanner(account);
-                    while (fileScanner.hasNextLine()) {
-                        System.out.println(fileScanner.nextLine());
-                    }
-                    fileScanner.close();
-                } catch (FileNotFoundException e) {
-                    errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
-                }
-            }
-        } else {
-            for (int i = 0; i < actionArgs.size(); i++) {
-                System.out.println(actionArgs.get(i));
-                if (accounts.contains(actionArgs.get(i))) {
-                    String routeAc = routeName + "\\" + accounts.get(i) + "." + sufix;
-                    File account = new File(routeAc);
-                    try {
-                        Scanner fileScanner = new Scanner(account);
-                        while (fileScanner.hasNextLine()) {
-                            System.out.println(fileScanner.nextLine());
-                        }
-                        fileScanner.close();
-                    } catch (FileNotFoundException e) {
-                        errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
-                    }
-                }else{
+        List<Registry> registries = getRegistries(actionArgs);
+        if(sort){
+            if(sortType.toUpperCase().equals("DATE") || sortType.toUpperCase().equals("D")){
 
-                }
             }
+            if(sortType.toUpperCase().equals("AMOUNT") || sortType.toUpperCase().equals("A")){
+
+            }
+        }
+        for(int i = 0; i < registries.size(); i++){
+            registries.get(i).plainPrint();
         }
     }
 
@@ -113,7 +173,7 @@ public class Ledger {
             ledger.errorHandling("File " + index + " not found");
         }
         ledger.routeName = index.replaceAll(ledger.indexFile.getName(), "");
-        System.out.println(ledger.routeName);
+        // System.out.println(ledger.routeName);
         ledger.priceDBFile = new File(priceDB);
         if (!ledger.priceDBFile.exists()) {
             ledger.errorHandling("File " + priceDB + " not found");
