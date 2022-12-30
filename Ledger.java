@@ -1,6 +1,7 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
@@ -18,11 +19,11 @@ public class Ledger {
         System.exit(-1);
     }
 
-    List<Registry> getRegistries(List<String> actionArgs) {
-        List<Registry> registriesToUse = new ArrayList<Registry>();
-        if (actionArgs.size() == 0) {
+    List<Registry> getRegistries(String arg) {
+        List<Registry> registriesToUse;
+        if (arg.equals("")) {
+            registriesToUse = new ArrayList<Registry>();
             for (int i = 0; i < accounts.size(); i++) {
-                System.out.println(accounts.get(i));
                 String routeAc = routeName + "/" + accounts.get(i) + "." + sufix;
                 File account = new File(routeAc);
                 try {
@@ -56,11 +57,9 @@ public class Ledger {
                     errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
                 }
             }
-        } else {
-            for (int i = 0; i < actionArgs.size(); i++) {
-                System.out.println(actionArgs.get(i));
-                if (accounts.contains(actionArgs.get(i))) {
-                    String routeAc = routeName + "" + accounts.get(i) + "." + sufix;
+        } else if(accounts.contains(arg)){
+            registriesToUse = new ArrayList<Registry>();
+                    String routeAc = routeName + "" + arg + "." + sufix;
                     File account = new File(routeAc);
                     try {
                         Scanner fileScanner = new Scanner(account);
@@ -90,12 +89,51 @@ public class Ledger {
                         fileScanner.close();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
-                        errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
+                        errorHandling("File " + arg + " not found\n" + e.getStackTrace());
                     }
-                } else {
-
+        }else{
+            registriesToUse = new ArrayList<Registry>();
+            for (int i = 0; i < accounts.size(); i++) {
+                String routeAc = routeName + "/" + accounts.get(i) + "." + sufix;
+                File account = new File(routeAc);
+                try {
+                    Scanner fileScanner = new Scanner(account);
+                    List<String> rawRegistry;
+                    while (fileScanner.hasNextLine()) {
+                        String line = fileScanner.nextLine();
+                        if (line.charAt(0) == ';')
+                            line = fileScanner.nextLine();
+                        while (fileScanner.hasNextLine()) {
+                            if (Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                rawRegistry = new ArrayList<String>();
+                                rawRegistry.add(line);
+                                boolean isDate = false;
+                                while (fileScanner.hasNextLine() && !isDate) {
+                                    line = fileScanner.nextLine();
+                                    if (!Pattern.compile("^[0-9].*$").matcher(line).matches()) {
+                                        rawRegistry.add(line);
+                                    } else {
+                                        isDate = true;
+                                    }
+                                }
+                                Registry reg = new Registry(rawRegistry);
+                                registriesToUse.add(reg);
+                            }
+                        }
+                    }
+                    fileScanner.close();
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    errorHandling("File " + accounts.get(i) + " not found\n" + e.getStackTrace());
                 }
             }
+            List<Registry> finalList = new ArrayList<Registry>();
+            for(int i = 0; i < registriesToUse.size(); i++){
+                for(int j = 0; j < registriesToUse.get(i).movementsList.size(); j++){
+                    if(registriesToUse.get(i).movementsList.get(j).name.indexOf(arg) != -1) finalList.add(registriesToUse.get(i));
+                }
+            }
+            registriesToUse = finalList;
         }
         return registriesToUse;
     }
@@ -109,18 +147,48 @@ public class Ledger {
     }
 
     void printFunction(boolean sort, String sortType, List<String> actionArgs) {
-        List<Registry> registries = getRegistries(actionArgs);
-        if(sort){
-            if(sortType.toUpperCase().equals("DATE") || sortType.toUpperCase().equals("D")){
-
+        if(actionArgs.size() == 0){
+            List<Registry> registries = getRegistries("");
+            if(sort){
+                if(sortType.toUpperCase().equals("DATE") || sortType.toUpperCase().equals("D")){
+                    Collections.sort(registries, (a,b)->{
+                        return a.date.compareTo(b.date);
+                    });
+                }
+                if(sortType.toUpperCase().equals("AMOUNT") || sortType.toUpperCase().equals("A")){
+                    Collections.sort(registries,(a,b)->{
+                        return (int) (a.getAmount(priceDBFile) - b.getAmount(priceDBFile));
+                    });
+                }
             }
-            if(sortType.toUpperCase().equals("AMOUNT") || sortType.toUpperCase().equals("A")){
-
+            for(int i = 0; i < registries.size(); i++){
+                registries.get(i).plainPrint();
+            }
+        }else{
+            for(int i = 0; i < actionArgs.size(); i++){
+                List<Registry> registries = getRegistries(actionArgs.get(i));
+                System.out.println(actionArgs.get(i));
+                if(sort){
+                    if(sortType.toUpperCase().equals("DATE") || sortType.toUpperCase().equals("D")){
+                        Collections.sort(registries, (a,b)->{
+                            return a.date.compareTo(b.date);
+                        });
+                    }
+                    if(sortType.toUpperCase().equals("AMOUNT") || sortType.toUpperCase().equals("A")){
+                        Collections.sort(registries,(a,b)->{
+                            return (int) (a.getAmount(priceDBFile) - b.getAmount(priceDBFile));
+                        });
+                    }
+                }
+                for(int j = 0; j < registries.size(); j++){
+                    registries.get(j).plainPrint();
+                }
+                
             }
         }
-        for(int i = 0; i < registries.size(); i++){
-            registries.get(i).plainPrint();
-        }
+        
+        
+        
     }
 
     public static void main(String[] args) {

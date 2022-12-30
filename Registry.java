@@ -1,8 +1,11 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Registry {
@@ -19,6 +22,34 @@ public class Registry {
     void plainPrint(){
         for(int i = 0; i < rawRegistry.size(); i++) System.out.println(rawRegistry.get(i));
     }
+
+    double getAmount(File priceDB){
+        double amount = 0;
+        for(int i = 0; i < movementsList.size(); i++){
+            if(movementsList.get(i).currency.equals("$")) {
+                amount = movementsList.get(i).amount;
+                return amount;
+            }
+        }
+        try {
+            Scanner fileScanner = new Scanner(priceDB);
+            while(fileScanner.hasNextLine()){
+                String line = fileScanner.nextLine();
+                if(line.indexOf(movementsList.get(0).currency) != -1){
+                    String[] priceSplit = line.split("\\s");
+                    String price = priceSplit[priceSplit.length - 1].replace("$", "").trim();
+                    amount = Double.parseDouble(price);
+                    return amount;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            errorHandling("File " + priceDB.getName() + " not found\n" + e.getStackTrace());
+        }
+        errorHandling("Currency or amount not found in registry " + concept);
+        return amount;
+    }
+
     public Registry(List<String> registry){
         rawRegistry = registry;
         movementsList = new ArrayList<Movement>();
