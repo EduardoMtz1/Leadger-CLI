@@ -236,27 +236,36 @@ public class Ledger {
         if (actionArgs.size() == 0) {
             List<Registry> registries = getRegistries("");
             for(int j = 0; j < registries.size(); j++){
+                double finalAmount = 0;
                 for(int k = 0; k < registries.get(j).movementsList.size(); k++){
+                    if(k < registries.get(j).movementsList.size() - 1){
+                        finalAmount = finalAmount + registries.get(j).movementsList.get(k).amount;
+                    }else{
+                        finalAmount = registries.get(j).movementsList.get(k).amount != 0 && !registries.get(j).movementsList.get(k).currency.equals("")? registries.get(j).movementsList.get(k).amount: finalAmount + registries.get(j).movementsList.get(k).amount;
+                    }
                     Movement regMov = registries.get(j).movementsList.get(k);
                         if(regMov.amount == 0 && regMov.currency.equals("")){
-                            regMov.amount = registries.get(j).movementsList.get(0).amount * -1;
+                            regMov.amount = finalAmount * -1;
                             regMov.currency = registries.get(j).movementsList.get(0).currency;
                         }
                         movements.add(regMov);
                 }
             }
-            for(int i = 0; i < movements.size(); i++){
-                System.out.println(movements.get(i).name.trim() + " " + movements.get(i).currency + movements.get(i).amount);
-            }
         } else {
             for (int i = 0; i < actionArgs.size(); i++) {
                 List<Registry> registries = getRegistriesBal(actionArgs.get(i));
                 for(int j = 0; j < registries.size(); j++){
+                    double finalAmount = 0;
                     for(int k = 0; k < registries.get(j).movementsList.size(); k++){
+                        if(k < registries.get(j).movementsList.size() - 1){
+                            finalAmount = finalAmount + registries.get(j).movementsList.get(k).amount;
+                        }else{
+                            finalAmount = registries.get(j).movementsList.get(k).amount != 0 && !registries.get(j).movementsList.get(k).currency.equals("")? registries.get(j).movementsList.get(k).amount: finalAmount + registries.get(j).movementsList.get(k).amount;
+                        }
                         if(registries.get(j).movementsList.get(k).name.indexOf(actionArgs.get(i)) != -1){
                             Movement regMov = registries.get(j).movementsList.get(k);
                             if(regMov.amount == 0 && regMov.currency.equals("")){
-                                regMov.amount = registries.get(j).movementsList.get(0).amount * -1;
+                                regMov.amount = finalAmount * -1;
                                 regMov.currency = registries.get(j).movementsList.get(0).currency;
                             }
                             movements.add(regMov);
@@ -264,10 +273,26 @@ public class Ledger {
                     }
                 }
             }
-            for(int i = 0; i < movements.size(); i++){
-                System.out.println(movements.get(i).name + " " + movements.get(i).currency + movements.get(i).amount);
+        }
+
+        
+
+
+
+
+        List<Counting> countings = new ArrayList<Counting>();
+        List<String> currencies = new ArrayList<String>();
+        for(int i = 0; i < movements.size(); i++){
+            if(!currencies.contains(movements.get(i).currency)) {
+                currencies.add(movements.get(i).currency);
+                Counting cCur = new Counting(movements.get(i).currency);
+                for(int j = 0; j < movements.size(); j++){
+                    if(movements.get(j).currency.equals(cCur.currency)) cCur.movements.add(movements.get(j));
+                }
+                countings.add(cCur);
             }
         }
+        
     }
 
     public static void main(String[] args) {
