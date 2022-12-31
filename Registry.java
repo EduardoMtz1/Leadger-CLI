@@ -30,33 +30,40 @@ public class Registry {
 
     void regPrint(){
         String[] months = {"Jan", "Feb", "Mar", "Apr", "May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-        double lastAmount = 0;
         Calendar calendar = Calendar.getInstance();
             calendar.setTime(date);
             String dateReg = calendar.get(calendar.YEAR) + "-" + months[calendar.get(calendar.MONTH)] + "-" + calendar.get(calendar.DAY_OF_MONTH);
             String conceptReg = concept;
             if(conceptReg.length() > 27)conceptReg = conceptReg.substring(0, 25) + "..";
             System.out.printf("%-11s %-28s",dateReg,conceptReg);
+            double finalAmount = 0;
             for(int i = 0; i < movementsList.size(); i++){
                 String movementReg = movementsList.get(i).name;
                 if(movementReg.length() > 35)movementReg = movementReg.substring(0, 33) + "..";
-                String amountReg = "";
+                if(i < movementsList.size() - 1){
+                    finalAmount = finalAmount + movementsList.get(i).amount;
+                }else{
+                    finalAmount = movementsList.get(i).amount != 0 && !movementsList.get(i).currency.equals("")? movementsList.get(i).amount: finalAmount + movementsList.get(i).amount;
+                }
+                String amountReg = "", finalAmountReg = "";
                 if(movementsList.get(i).amount != 0 && !movementsList.get(i).currency.equals("")){
                     DecimalFormat df = new DecimalFormat("#.00");
                     if(movementsList.get(i).currency.equals("$")){
                         amountReg = "$" + df.format(movementsList.get(i).amount);
+                        finalAmountReg = "$" + df.format(finalAmount);
                     }else{
                         amountReg = df.format(movementsList.get(i).amount) + " " + movementsList.get(i).currency;
+                        finalAmountReg = df.format(finalAmount)  + " " + movementsList.get(i).currency;
                     }
                     String format = movementsList.get(i).amount < 0 ?ANSI_BLUE + "%-35s" + ANSI_RED + "%15s%15s \n" +ANSI_RESET:ANSI_BLUE + "%-35s" +ANSI_RESET +"%15s%15s\n";
                     if(i > 0)
-                    System.out.printf("%40s" + format, " ", movementReg, amountReg, amountReg);
+                    System.out.printf("%40s" + format, " ", movementReg, amountReg, finalAmountReg);
                     else
-                    System.out.printf(format, movementReg, amountReg, amountReg);
+                    System.out.printf(format, movementReg, amountReg, finalAmountReg);
                 }else{
                     if( i == 0) errorHandling("No amount in registry " + movementsList.get(i));
                     DecimalFormat df = new DecimalFormat("#.00");
-                    double amount = movementsList.get(0).amount * -1;
+                    double amount = finalAmount * -1;
                     if(movementsList.get(0).currency.equals("$")){
                         amountReg = "$" + df.format(amount);
                     }else{
@@ -70,6 +77,14 @@ public class Registry {
 
     double getAmount(File priceDB){
         double amount = 0;
+        if(movementsList.size() > 2){
+            for(int i = 0; i < movementsList.size() - 1; i++){
+                if(movementsList.get(i).currency.equals("$")) {
+                    amount = amount + movementsList.get(i).amount;
+                }
+            }
+            if(amount != 0) return amount;
+        }
         for(int i = 0; i < movementsList.size(); i++){
             if(movementsList.get(i).currency.equals("$")) {
                 amount = movementsList.get(i).amount;
@@ -87,6 +102,7 @@ public class Registry {
                     return amount;
                 }
             }
+            fileScanner.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             errorHandling("File " + priceDB.getName() + " not found\n" + e.getStackTrace());
