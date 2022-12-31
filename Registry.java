@@ -1,8 +1,10 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
@@ -13,6 +15,9 @@ public class Registry {
     Date date;
     String concept;
     List<Movement> movementsList;
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     void errorHandling(String s) {
         System.out.println(s);
@@ -21,6 +26,46 @@ public class Registry {
 
     void plainPrint(){
         for(int i = 0; i < rawRegistry.size(); i++) System.out.println(rawRegistry.get(i));
+    }
+
+    void regPrint(){
+        String[] months = {"Jan", "Feb", "Mar", "Apr", "May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+        double lastAmount = 0;
+        Calendar calendar = Calendar.getInstance();
+            calendar.setTime(date);
+            String dateReg = calendar.get(calendar.YEAR) + "-" + months[calendar.get(calendar.MONTH)] + "-" + calendar.get(calendar.DAY_OF_MONTH);
+            String conceptReg = concept;
+            if(conceptReg.length() > 27)conceptReg = conceptReg.substring(0, 25) + "..";
+            System.out.printf("%-11s %-28s",dateReg,conceptReg);
+            for(int i = 0; i < movementsList.size(); i++){
+                String movementReg = movementsList.get(i).name;
+                if(movementReg.length() > 35)movementReg = movementReg.substring(0, 33) + "..";
+                String amountReg = "";
+                if(movementsList.get(i).amount != 0 && !movementsList.get(i).currency.equals("")){
+                    DecimalFormat df = new DecimalFormat("#.00");
+                    if(movementsList.get(i).currency.equals("$")){
+                        amountReg = "$" + df.format(movementsList.get(i).amount);
+                    }else{
+                        amountReg = df.format(movementsList.get(i).amount) + " " + movementsList.get(i).currency;
+                    }
+                    String format = movementsList.get(i).amount < 0 ?ANSI_BLUE + "%-35s" + ANSI_RED + "%15s%15s \n" +ANSI_RESET:ANSI_BLUE + "%-35s" +ANSI_RESET +"%15s%15s\n";
+                    if(i > 0)
+                    System.out.printf("%40s" + format, " ", movementReg, amountReg, amountReg);
+                    else
+                    System.out.printf(format, movementReg, amountReg, amountReg);
+                }else{
+                    if( i == 0) errorHandling("No amount in registry " + movementsList.get(i));
+                    DecimalFormat df = new DecimalFormat("#.00");
+                    double amount = movementsList.get(0).amount * -1;
+                    if(movementsList.get(0).currency.equals("$")){
+                        amountReg = "$" + df.format(amount);
+                    }else{
+                        amountReg = df.format(amount) + " " + movementsList.get(0).currency;
+                    }
+                    String format = amount < 0 ?ANSI_BLUE + "%37s%-36s" +  ANSI_RED + "%15s" + ANSI_RESET+"%15s \n" +ANSI_RESET:ANSI_BLUE + "%37s%-36s" +  ANSI_RESET +"%15s"+ ANSI_RESET+"%15s\n";
+                    System.out.printf(format, " ",movementReg,amountReg, " 0");
+                }
+            }
     }
 
     double getAmount(File priceDB){
