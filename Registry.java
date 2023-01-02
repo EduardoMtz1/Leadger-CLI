@@ -162,9 +162,11 @@ public class Registry {
         movementsList = new ArrayList<Movement>();
         String[] firstLine = rawRegistry.get(0).split("\\s");
         String dateReg = firstLine[0];
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy/mm/dd");    //Getting the date from the raw registry
+        String [] dateArgs = dateReg.split("/");
+        if(dateArgs[1].trim().length() == 1)dateArgs[1] = "0" + dateArgs[1];
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd");    //Getting the date from the raw registry
         try {
-            date = formatter.parse(dateReg);
+            date = formatter.parse(dateArgs[0] + "/" + dateArgs[1] + "/" + dateArgs[2]);
         } catch (ParseException e) {    //Catching if incorrect date format
             errorHandling("Incorrect date format" + e.getStackTrace());
         }
