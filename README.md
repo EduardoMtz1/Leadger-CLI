@@ -93,8 +93,8 @@ To get:
 - ## Balance function
 We can use the balance function with the command balance or bal:
 ```
-    ./my-ledger.sh registry
-    ./my-ledger.sh reg
+    ./my-ledger.sh balance
+    ./my-ledger.sh bal
 ```
 This function obtains the balance from the accounts that match the name of the accounts we introduce, depending on the movements we have. If we don't introduce any name we'll get the balance of every account in our ledger files.
 
@@ -112,4 +112,13 @@ And if we only want to see info about our Asset, we'll use:
 ```
 To get:
 
-![Image text](https://github.com/EduardoMtz1/Ledger-CLI/blob/main/ReadMeFiles/Reg-02.png)
+![Image text](https://github.com/EduardoMtz1/Ledger-CLI/blob/main/ReadMeFiles/Bal-02.png)
+
+### Sort Flag
+In registry and print functions we can use the flag "-s" or "--sort" to sort the movements by date or amount.
+
+For example:
+```
+    ./my-ledger.sh reg -s date
+    ./my-ledger.sh reg -s amount
+```
