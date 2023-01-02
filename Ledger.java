@@ -1,18 +1,23 @@
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Ledger {
-
+    final List<String> comments = Arrays.asList(";", "#", "%", "|", "*");
     public File indexFile;
     public String routeName = "";
     public File priceDBFile;
     public List<String> accounts = new ArrayList<String>();
     public String sufix;
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001B[34m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     void errorHandling(String s) {
         System.out.println(s);
@@ -233,6 +238,24 @@ public class Ledger {
         return registriesToUse;
     }
 
+    void printableAccount(String accountName, List<Counting> counting, int spaces){
+        String finalName = "";
+        for(int i = 0; i < spaces; i++){
+            finalName = finalName + "\t";
+        }
+        finalName = finalName + accountName;
+        DecimalFormat df = new DecimalFormat("#.00");
+        for(int i = 0; i < counting.size(); i++){
+            String finalAmount = df.format(counting.get(i).getTotal());
+            if(counting.get(i).currency.equals("$")) finalAmount = counting.get(i).currency + finalAmount;
+            else finalAmount = finalAmount + " " +counting.get(i).currency;
+            if(counting.get(i).getTotal() > 0) System.out.printf("%15s", finalAmount);
+            else System.out.printf(ANSI_RED + "%15s" + ANSI_RESET, finalAmount);
+            if(i == counting.size() - 1) System.out.print("  "+ANSI_BLUE+finalName +ANSI_RESET+ "\n");
+            else System.out.print("\n");
+        }
+    }
+
     void balanceFunction(List<String> actionArgs) {
         List<Movement> movements = new ArrayList<Movement>();
         if (actionArgs.size() == 0) {
@@ -305,8 +328,15 @@ public class Ledger {
                 countings.add(cCur);
             }
         }
-
-        for(int i = 0; i < countings.size(); i++) System.out.println(countings.get(i).currency + countings.get(i).getTotal());
+        System.out.println("--------------------------------------");
+        DecimalFormat df = new DecimalFormat("#.00");
+        for(int i = 0; i < countings.size(); i++){ 
+            String finalAmount = df.format(countings.get(i).getTotal());
+            if(countings.get(i).currency.equals("$")) finalAmount = countings.get(i).currency + finalAmount;
+            else finalAmount = finalAmount + " " +countings.get(i).currency;
+            if(countings.get(i).getTotal() > 0) System.out.printf("%15s\n", finalAmount);
+            else System.out.printf(ANSI_RED + "%15s\n" + ANSI_RESET, finalAmount);
+        }
 
     }
 
@@ -315,7 +345,6 @@ public class Ledger {
         List<String> accountsName = new ArrayList<String>();
         for (int i = 0; i < movements.size(); i++) {
             String[] acc = movements.get(i).name.trim().split("\\:");
-            //System.out.println(movements.get(i).name + "-> " + acc.length);
             if (iterations < acc.length && !accountsName.contains(acc[iterations])) {
                 accountsName.add(acc[iterations]);
                 Account tempAcc = new Account(acc[iterations]);
@@ -338,101 +367,29 @@ public class Ledger {
                     if(iterations + 1 < acc.length && tempAccountsName.contains(acc[iterations + 1])) movementsUsed++;
                 }
                 if(tempAccountsName.size() > 1){
-                    System.out.println(lastName + accountsBalance.get(i).name + ":");
                     accountsBalance.get(i).getAmounts();
-                    for (int j = 0; j < accountsBalance.get(i).countings.size(); j++) {
-                        System.out.println(accountsBalance.get(i).countings.get(j).currency
-                                + accountsBalance.get(i).countings.get(j).getTotal());
-                    }
+                    printableAccount(lastName + accountsBalance.get(i).name, accountsBalance.get(i).countings, iterations);
                     printBalance(lastName, iterations + 1, maxLengthName, accountsBalance.get(i).movements);
                 }else if(tempAccountsName.size() == 1){
                     if(movementsUsed < accountsBalance.get(i).movements.size()){
-                        System.out.println(lastName + accountsBalance.get(i).name);
-                    accountsBalance.get(i).getAmounts();
-                    for (int j = 0; j < accountsBalance.get(i).countings.size(); j++) {
-                        System.out.println(accountsBalance.get(i).countings.get(j).currency
-                                + accountsBalance.get(i).countings.get(j).getTotal());
-                    }
-                    printBalance("", iterations + 1, maxLengthName, accountsBalance.get(i).movements);
-
+                        accountsBalance.get(i).getAmounts();
+                        printableAccount(lastName + accountsBalance.get(i).name, accountsBalance.get(i).countings, iterations);
+                        printBalance("", iterations + 1, maxLengthName, accountsBalance.get(i).movements);
                     }else
                     printBalance(lastName + accountsBalance.get(i).name + ":", iterations + 1, maxLengthName, accountsBalance.get(i).movements);
                 }else{
-                    System.out.println(lastName + accountsBalance.get(i).name);
                     accountsBalance.get(i).getAmounts();
-                    for (int j = 0; j < accountsBalance.get(i).countings.size(); j++) {
-                        System.out.println(accountsBalance.get(i).countings.get(j).currency
-                                + accountsBalance.get(i).countings.get(j).getTotal());
-                    }
+                    String[] acc = lastName.split("\\:");
+                    printableAccount(lastName + accountsBalance.get(i).name, accountsBalance.get(i).countings, iterations - acc.length);
                 }
             } else {
                 String finalName = "";
                 String[] nameParts = accountsBalance.get(i).movements.get(0).name.trim().split("\\:");
                 for(int j = iterations; j <nameParts.length; j++) finalName = finalName + nameParts[j]+":";
-                System.out.println(finalName);
                 accountsBalance.get(i).getAmounts();
-                for (int j = 0; j < accountsBalance.get(i).countings.size(); j++) {
-                    System.out.println(accountsBalance.get(i).countings.get(j).currency
-                            + accountsBalance.get(i).countings.get(j).getTotal());
-                }
+                printableAccount(finalName.substring(0,finalName.length()-1), accountsBalance.get(i).countings, iterations);
             }
         }
-        /*
-         * for(int i = 0; i < accountsBalance.size(); i++) {
-         * accountsBalance.get(i).getAmounts();
-         * System.out.println(accountsBalance.get(i).name);
-         * for(int j = 0; j < accountsBalance.get(i).countings.size();j++){
-         * System.out.println(accountsBalance.get(i).countings.get(j).currency +
-         * accountsBalance.get(i).countings.get(j).getTotal());
-         * }
-         * for(int j = 0; j < accountsBalance.get(i).movements.size(); j++){
-         * System.out.println(accountsBalance.get(i).movements.get(j).name.trim() +
-         * accountsBalance.get(i).movements.get(j).currency +
-         * accountsBalance.get(i).movements.get(j).amount);
-         * }
-         * accountsBalance.get(i).getAmounts();
-         * System.out.println(accountsBalance.get(i).name);
-         * for(int j = 0; j < accountsBalance.get(i).countings.size(); j++){
-         * System.out.println(accountsBalance.get(i).countings.get(j).currency +
-         * accountsBalance.get(i).countings.get(j).getTotal());
-         * }
-         * }
-         * 
-         * if(accountsBalance.size() > 1){
-         * for(int i = 0; i < accountsBalance.size() ; i++){
-         * List<Movement> newMovementsList = new ArrayList<Movement>();
-         * for(int j = 0; j < accountsBalance.get(i).movements.size(); j++){
-         * String[] nameAcc =
-         * accountsBalance.get(i).movements.get(j).name.trim().split("\\:");
-         * if(nameAcc.length > iterations +
-         * 1)newMovementsList.add(accountsBalance.get(i).movements.get(j));
-         * }
-         * if(newMovementsList.size() > 0){
-         * String[] nameAcc = newMovementsList.get(0).name.trim().split("\\:");
-         * String finalName = "";
-         * for(int j = iterations; j < nameAcc.length; j++) finalName = finalName +
-         * nameAcc[j] + ":";
-         * String finalAmount = newMovementsList.get(0).currency +
-         * newMovementsList.get(0).amount;
-         * if(newMovementsList.size() == 1) System.out.println(finalName + " " +
-         * finalAmount);
-         * else printBalance(lastName + accountsBalance.get(i).name + ":",iterations+1,
-         * maxLengthName, newMovementsList);
-         * }
-         * }
-         * 
-         * 
-         * }else{
-         * System.out.println(lastName + accountsBalance.get(0).name);
-         * accountsBalance.get(0).getAmounts();
-         * for(int j = 0; j < accountsBalance.get(0).countings.size(); j++){
-         * System.out.println(accountsBalance.get(0).countings.get(j).currency +
-         * accountsBalance.get(0).countings.get(j).getTotal());
-         * }
-         * printBalance(lastName, iterations + 1, maxLengthName,
-         * accountsBalance.get(0).movements);
-         * }
-         */
     }
 
     public static void main(String[] args) {
@@ -463,6 +420,7 @@ public class Ledger {
                     ledger.errorHandling("No sort mode defined");
                 sortBy = args[i + 1].trim();
             }
+            if(ledger.comments.contains(args[i].trim())) actionReady = false;
             if (actionReady)
                 actionArgs.add(args[i].trim());
             if (args[i].trim().equals("bal") || args[i].trim().equals("balance")) {
